@@ -2,7 +2,7 @@
 #
 #包：SonsorSwitch
 #包初始化：配置文件路径，例如：r"F:\cvi\app\NC208\NC208measureconfig.csv"
-#包方法：GetSwitchInfo(self,num)，根据传感器编号num，获取配置信息列表。
+#方法：GetSwitchInfo(self,num)，根据传感器编号num，获取配置信息列表。
 
 import fileinput
 
@@ -10,6 +10,7 @@ import fileinput
 #配置文件路径
 path = r"F:\cvi\app\NC208\NC208measureconfig.csv"
 
+conf_list= []
 #读取配置信息
 def readConfigInfoFromFile(path):
     linenum = 0
@@ -34,7 +35,7 @@ def readConfigInfoFromFile(path):
             conf_list.append(dict)
 
 class SonsorSwitch(object):
-    def __init__(self,path):
+    def __init__(self,path = r"F:\cvi\app\NC208\NC208measureconfig.csv"):
         readConfigInfoFromFile(path)
 
     def GetSwitchInfo(self,num):                 #传感器编号
