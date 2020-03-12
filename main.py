@@ -4,8 +4,11 @@ from    Relays      import  *      #继电器组切换，通道选择
 from    E2001       import  *      #速度切换
 import  time
 from    SysConfig   import  *      #配置文件
+import  sys
+import  os
+from time import strftime, localtime
 
-version = "V1.0"
+version = "V1.2"
 #配置文件路径
 path    = r"F:\cvi\app\NC208\NC208measureconfig.csv"
 #测试台串口
@@ -15,6 +18,20 @@ pcBaud = 9600
 swPort  = "COM10"
 swBaud = 9600
 debug  = 0
+
+class Logger(object):
+    def __init__(self, filename="log.txt"):
+        self.terminal = sys.stdout
+        self.log = open(filename, "a")
+ 
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+        self.log.flush()    
+
+    def flush(self):
+        pass
+
 #初始化函数
 def getConfig():
     global  path
@@ -49,11 +66,17 @@ def getConfig():
 
 #程序入库，主函数    
 def main():
+    log = strftime("%Y_%m_%d %H_%M_%S", localtime())
+    log = "log/"+log + ".log"
+    sys.stdout = Logger(log)                                           #加入日志
+
+    print(strftime("%Y-%m-%d %H:%M:%S", localtime()))
     print('\r\n--------------------------------------------')
     print("名称：通道切换程序；\r\n作者：redmorningcn；\r\n版本：%s；"%version,)
-    print("创建时间：2020/03/03；")
+    print("创建时间：2020/03/15；")
     print('\r\n--------------------------------------------')
-    
+    #sys.stdout = origin
+    #f.close()
     try:
         getConfig()                                                 #取配置信息
     
@@ -68,6 +91,8 @@ def main():
 
         SwSer       =  MdMaster(swPort,swBaud)                      #创建切换装置对象
 
+        ClearAllRelays(SwSer)                                       #开机清所有寄存器20
+        
         lstnode1    = 1
         lstnode2    = 1
         pcSer.rcflg = 0
@@ -88,11 +113,11 @@ def main():
                 pcSer.rcflg = 0             #结束标识清零
                 
                 if pcInfo.sensor < 255:
-                    pcInfo.sensor += 1          #跳过序号0，所有序号加1             
+                    pcInfo.sensor += 1      #跳过序号0，所有序号加1             
                 
 
                 #调试模式
-                if  debug == 1:              #传感器调试
+                if  debug == 1:             #传感器调试
                     try:
                         pcInfo.sensor = int(input("输入传感器编号："))
                         pcInfo.rotate = 0
@@ -123,18 +148,21 @@ def main():
                         #清前一次标识
                         SetRelays(SwSer,lstnode1,0)
                         SetRelays(SwSer,lstnode2,0)
-                        print("\r\n---清除传感器上次配置完成---")
+                        print("\r\n---(%d)清除传感器上次配置完成---"%pcInfo.sensor)
                         
                         SetRelays(SwSer,config['node1'],config['value1'])
                         SetRelays(SwSer,config['node2'],config['value2'])
 
                         lstnode1 = config['node1']
                         lstnode2 = config['node2']
-                        print("\r\n--------传感器切换完成--------")
+                        print("\r\n--------(%d)传感器切换完成--------"%pcInfo.sensor)
                         #根据配置表，设置电机
                         speed = int((pcInfo.rotate * 5) / 3 )       #速度换算
-                        setSpeed(SwSer,config['motor'],speed)
-                        print("\r\n--------电机设置完成----------")
+                        setSpeed(SwSer,config['motor'],speed % 3500)
+                        print("\r\n----------电机设置完成------------")
+
+                        print(strftime("%Y-%m-%d %H:%M:%S", localtime()))
+
                 
     except Exception as e:
         print("***软件配置异常---",e)
